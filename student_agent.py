@@ -309,6 +309,7 @@ class NTupleApproximator:
 
 import sys
 sys.modules['__main__'].NTupleApproximator = NTupleApproximator
+sys.modules['__main__'].init_weight = init_weight
 
 def compute_afterstate(env, a):
     test_env = copy.deepcopy(env)
