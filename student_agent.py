@@ -416,7 +416,7 @@ def get_action(state, score):
     for _ in range(td_mcts.iterations):
         td_mcts.run_simulation(root)
     best_act, dist = td_mcts.best_action_distribution(root)
-    print(score, dist)
+    print(score, dist, flush=True)
     return best_act
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
