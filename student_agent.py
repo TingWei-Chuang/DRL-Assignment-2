@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import copy
 import random
 import math
+from collections import defaultdict
 
 
 class Game2048Env(gym.Env):
@@ -231,9 +232,187 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
+def rot90(i, j):
+    return 3 - j, i
+
+def reflect(i, j):
+    return i, 3 - j
+
+def init_weight():
+    return 0
+
+class NTupleApproximator:
+    def __init__(self, board_size, patterns):
+        self.board_size = board_size
+        self.patterns = patterns
+        self.weights = [defaultdict(init_weight) for _ in patterns]
+        self.symmetry_patterns = []
+        for pattern in self.patterns:
+            syms = self.generate_symmetries(pattern)
+            for syms_ in syms:
+                self.symmetry_patterns.append(syms_)
+
+    def rotate90(self, pattern):
+        new_pattern = []
+        for i, j in pattern:
+            new_pattern.append(rot90(i, j))
+        return new_pattern
+
+    def reflection(self, pattern):
+        new_pattern = []
+        for i, j in pattern:
+            new_pattern.append(reflect(i, j))
+        return new_pattern
+
+    def generate_symmetries(self, pattern):
+        p90 = self.rotate90(pattern)
+        p180 = self.rotate90(p90)
+        p270 = self.rotate90(p180)
+        r0 = self.reflection(pattern)
+        r90 = self.reflection(p90)
+        r180 = self.reflection(p180)
+        r270 = self.reflection(p270)
+        return [pattern, p90, p180, p270, r0, r90, r180, r270]
+
+    def tile_to_index(self, tile):
+        if tile == 0:
+            return 0
+        else:
+            return int(math.log(tile, 2))
+
+    def get_feature(self, board, coords):
+        key = []
+        for i, j in coords:
+            key.append(self.tile_to_index(board[i, j]))
+        return tuple(key)
+
+    def value(self, board):
+        value_estimate = 0
+        n = 0
+        for i in range(len(self.patterns)):
+            for j in range(8):
+                pattern_coords = self.symmetry_patterns[i * 8 + j]
+                feat = self.get_feature(board, pattern_coords)
+                if feat in self.weights[i]:
+                    value_estimate += self.weights[i][feat]
+                    n += 1
+        if n > 0:
+            value_estimate *= len(self.patterns) * 8 / n
+        return value_estimate
+
+    def update(self, board, delta, alpha):
+        norm = len(self.patterns) * 8
+        for i in range(len(self.patterns)):
+            for j in range(8):
+                pattern_coords = self.symmetry_patterns[i * 8 + j]
+                self.weights[i][self.get_feature(board, pattern_coords)] += alpha * delta / norm
+
+def compute_afterstate(env, a):
+    test_env = copy.deepcopy(env)
+    s_prev = test_env.score
+    if a == 0:
+        test_env.move_up()
+    elif a == 1:
+        test_env.move_down()
+    elif a == 2:
+        test_env.move_left()
+    elif a == 3:
+        test_env.move_right()
+    return test_env.board, test_env.score - s_prev
+
+def evaluate(env, approximator, a):
+    s_, r = compute_afterstate(env, a)
+    return r + approximator.value(s_)
+
+class TD_MCTS_Node:
+    def __init__(self, parent=None, action=None):
+        self.parent = parent
+        self.action = action
+        self.children = {}
+        self.visits = 0
+        self.total_reward = 0.0
+        self.untried_actions = [a for a in range(4)]
+
+    def fully_expanded(self):
+        return len(self.untried_actions) == 0
+
+class TD_MCTS:
+    def __init__(self, env, approximator, iterations=500, exploration_constant=1.41, rollout_depth=10, gamma=0.99):
+        self.env = env
+        self.approximator = approximator
+        self.iterations = iterations
+        self.c = exploration_constant
+        self.rollout_depth = rollout_depth
+        self.gamma = gamma
+
+    def select_child(self, node):
+        children = []
+        temp = []
+        for child in node.children.values():
+            temp.append(child.total_reward + self.c * np.sqrt(np.log(node.visits) / child.visits))
+            children.append(child)
+        return children[np.argmax(temp)]
+
+    def rollout(self, action_sequence):
+        sim_env = copy.deepcopy(self.env)
+        for action in action_sequence:
+            if not sim_env.is_move_legal(action):
+                return 0
+            sim_env.step(action)
+        action_values = []
+        for a in range(4):
+            action_values.append(evaluate(sim_env, self.approximator, a))
+        return sim_env.score + max(action_values)
+
+    def backpropagate(self, node, reward):
+        while node is not None:
+            node.visits += 1
+            node.total_reward += (1 / node.visits) * (reward - node.total_reward)
+            node = node.parent
+
+    def run_simulation(self, root):
+        node = root
+        action_sequence = []
+        while node.fully_expanded():
+            node = self.select_child(node)
+            action_sequence.append(node.action)
+        action = np.random.choice(node.untried_actions)
+        node.untried_actions.remove(action)
+        new_node = TD_MCTS_Node(node, action)
+        node.children[action] = new_node
+        node = new_node
+        action_sequence.append(action)
+
+        rollout_reward = self.rollout(action_sequence)
+        self.backpropagate(node, rollout_reward)
+
+    def best_action_distribution(self, root):
+        # Compute the normalized visit count distribution for each child of the root.
+        total_visits = sum(child.visits for child in root.children.values())
+        distribution = np.zeros(4)
+        best_visits = -1
+        best_action = None
+        for action, child in root.children.items():
+            distribution[action] = child.visits / total_visits if total_visits > 0 else 0
+            if child.visits > best_visits:
+                best_visits = child.visits
+                best_action = action
+        return best_action, distribution
+
+with open("last_3.pkl", "rb") as f:
+    approximator = pickle.load(f)
+
+env = Game2048Env()
+td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
+
 def get_action(state, score):
-    env = Game2048Env()
-    return random.choice([0, 1, 2, 3]) # Choose a random action
+    env.board = state.copy()
+    env.score = score
+    root = TD_MCTS_Node(None, None)
+    for _ in range(td_mcts.iterations):
+        td_mcts.run_simulation(root)
+    best_act, _ = td_mcts.best_action_distribution(root)
+    return best_act
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
 
