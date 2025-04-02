@@ -307,6 +307,9 @@ class NTupleApproximator:
                 pattern_coords = self.symmetry_patterns[i * 8 + j]
                 self.weights[i][self.get_feature(board, pattern_coords)] += alpha * delta / norm
 
+import sys
+sys.modules['__main__'].NTupleApproximator = NTupleApproximator
+
 def compute_afterstate(env, a):
     test_env = copy.deepcopy(env)
     s_prev = test_env.score
@@ -411,7 +414,8 @@ def get_action(state, score):
     root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
         td_mcts.run_simulation(root)
-    best_act, _ = td_mcts.best_action_distribution(root)
+    best_act, dist = td_mcts.best_action_distribution(root)
+    print(score, dist)
     return best_act
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
