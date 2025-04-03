@@ -530,6 +530,9 @@ def get_action(state, score):
         td_mcts.run_simulation(root)
     best_act, dist = td_mcts.best_action_distribution(root)
 
+    del root
+    #gc.collect()
+
     '''action_values = []
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
     action = 0
