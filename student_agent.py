@@ -414,7 +414,8 @@ with open("last_3.pkl", "rb") as f:
 print("d")
 
 for w in approximator.weights:
-    pass
+    for key in w:
+        w[key]
 
 print("d")
 
