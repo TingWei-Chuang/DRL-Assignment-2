@@ -418,7 +418,7 @@ def get_action(state, score):
     global approximator
 
     if approximator is None:
-        with open("last_3.pkl", "rb") as f:
+        with open("last_cp.pkl", "rb") as f:
             approximator = pickle.load(f)
 
     env.board = state
