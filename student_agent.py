@@ -420,11 +420,13 @@ approximator = None
 def get_action(state, score):
     global steps
     global approximator
+    if approximator is None:
+        with open("last_3.pkl", "rb") as f:
+            approximator = pickle.load(f)
     if steps % 100 == 0:
         steps = 0
-        if approximator is not None:
-            del approximator
-        gc.collect()
+        del approximator
+        print("reload")
         with open("last_3.pkl", "rb") as f:
             approximator = pickle.load(f)
     steps += 1
@@ -446,6 +448,8 @@ def get_action(state, score):
         action = legal_moves[np.argmax(action_values)]
 
     print(score, action, len(legal_moves), flush=True)
+
+    gc.collect()
     return action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
