@@ -539,6 +539,7 @@ def get_action(state, score):
         action = legal_moves[np.argmax(action_values)]'''
 
     #print(score, action, len(legal_moves), flush=True)
+    print(score, best_act, flush=True)
     random.seed(0)
     return best_act
     
