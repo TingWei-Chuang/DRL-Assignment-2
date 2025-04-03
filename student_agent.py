@@ -515,6 +515,8 @@ def free(root: TD_MCTS_Node):
         free(children)
     del root
 
+import os 
+
 def get_action(state, score):
     global approximator
     global env
@@ -525,7 +527,7 @@ def get_action(state, score):
         with open("last_cp.pkl", "rb") as f:
             approximator = pickle.load(f)
         env = Game2048Env()
-        td_mcts = TD_MCTS(env, approximator, iterations=10, exploration_constant=1.41, rollout_depth=0)
+        td_mcts = TD_MCTS(env, approximator, iterations=10, exploration_constant=0, rollout_depth=0)
 
     env.board = state
     env.score = score
@@ -551,6 +553,7 @@ def get_action(state, score):
 
     #print(score, action, len(legal_moves), flush=True)
     print(score, best_act, dist, flush=True)
+    os.system("free -h")
     random.seed(0)
     return best_act
     
