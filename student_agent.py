@@ -530,7 +530,7 @@ def get_action(state, score):
         td_mcts.run_simulation(root)
     best_act, dist = td_mcts.best_action_distribution(root)
 
-    del root
+    gc.enable()
     gc.collect()
 
     '''action_values = []
