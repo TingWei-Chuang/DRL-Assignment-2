@@ -295,8 +295,8 @@ class NTupleApproximator:
                 if feat in self.weights[i]:
                     value_estimate += self.weights[i][feat]
                     n += 1
-        if n > 0:
-            value_estimate *= len(self.patterns) * 8 / n
+        '''if n > 0:
+            value_estimate *= len(self.patterns) * 8 / n'''
         return value_estimate
 
     def update(self, board, delta, alpha):
