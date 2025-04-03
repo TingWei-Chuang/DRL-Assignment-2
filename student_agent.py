@@ -408,23 +408,22 @@ class TD_MCTS:
                 best_action = action
         return best_action, distribution
 
-with open("last_3.pkl", "rb") as f:
-    approximator = pickle.load(f)
-
-print("d")
-
-for w in approximator.weights:
-    for key in w:
-        w[key]
-
-#approximator.weights = [defaultdict(init_weight) for i in range(len(approximator.weights))]
-
-print("d")
 
 env = Game2048Env()
 #td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
 
+steps = 0
+import gc
+
 def get_action(state, score):
+    global steps
+    if steps % 100 == 0:
+        steps = 0
+        del approximator
+        gc.collect()
+        with open("last_3.pkl", "rb") as f:
+            approximator = pickle.load(f)
+    steps += 1
     del env.board
     env.board = state.copy()
     del state
