@@ -415,11 +415,15 @@ env = Game2048Env()
 steps = 0
 import gc
 
+approximator = None
+
 def get_action(state, score):
     global steps
+    global approximator
     if steps % 100 == 0:
         steps = 0
-        del approximator
+        if approximator is not None:
+            del approximator
         gc.collect()
         with open("last_3.pkl", "rb") as f:
             approximator = pickle.load(f)
