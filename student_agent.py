@@ -10,7 +10,6 @@ import random
 import math
 from collections import defaultdict
 
-
 class Game2048Env(gym.Env):
     def __init__(self):
         super(Game2048Env, self).__init__()
@@ -409,21 +408,20 @@ class TD_MCTS:
 env = Game2048Env()
 #td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
 
-steps = 0
 import gc
 gc.enable()
+gc.collect()
 
 approximator = None
 
 def get_action(state, score):
-    global steps
     global approximator
 
     if approximator is None:
         with open("last_3.pkl", "rb") as f:
             approximator = pickle.load(f)
 
-    env.board = state.copy()
+    env.board = state
     env.score = score
     '''root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
@@ -440,7 +438,6 @@ def get_action(state, score):
 
     print(score, action, len(legal_moves), flush=True)
 
-    gc.collect()
     return action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
