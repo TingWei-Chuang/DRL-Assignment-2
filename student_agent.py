@@ -510,6 +510,11 @@ approximator = None
 env = None
 td_mcts = None
 
+def free(root: TD_MCTS_Node):
+    for children in root.children.values():
+        free(children)
+    del root
+
 def get_action(state, score):
     global approximator
     global env
@@ -530,6 +535,7 @@ def get_action(state, score):
         td_mcts.run_simulation(root)
     best_act, dist = td_mcts.best_action_distribution(root)
 
+    free(root)
     gc.enable()
     gc.collect()
 
@@ -542,7 +548,7 @@ def get_action(state, score):
         action = legal_moves[np.argmax(action_values)]'''
 
     #print(score, action, len(legal_moves), flush=True)
-    print(score, best_act, flush=True)
+    print(score, best_act, dist, flush=True)
     random.seed(0)
     return best_act
     
