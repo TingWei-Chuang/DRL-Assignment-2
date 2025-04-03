@@ -536,8 +536,7 @@ def get_action(state, score):
     for _ in range(td_mcts.iterations):
         random.seed(0)
         td_mcts.run_simulation(root)
-        #gc.collect()
-        os.system("free -h")
+        gc.collect()
     best_act, dist = td_mcts.best_action_distribution(root)
 
     root = None
