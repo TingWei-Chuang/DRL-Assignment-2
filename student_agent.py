@@ -521,10 +521,11 @@ def get_action(state, score):
     global td_mcts
 
     if approximator is None:
+        print("LOADING")
         with open("last_cp.pkl", "rb") as f:
             approximator = pickle.load(f)
         env = Game2048Env()
-        td_mcts = TD_MCTS(env, approximator, iterations=100, exploration_constant=10, rollout_depth=0)
+        td_mcts = TD_MCTS(env, approximator, iterations=20, exploration_constant=1.41, rollout_depth=0)
 
     env.board = state
     env.score = score
@@ -535,7 +536,8 @@ def get_action(state, score):
         td_mcts.run_simulation(root)
     best_act, dist = td_mcts.best_action_distribution(root)
 
-    free(root)
+    root = None
+    #free(root)
     gc.enable()
     gc.collect()
 
