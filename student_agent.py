@@ -417,7 +417,7 @@ for w in approximator.weights:
     for key in w:
         w[key]
 
-approximator.weights = [defaultdict(init_weight) for i in range(len(approximator.weights))]
+#approximator.weights = [defaultdict(init_weight) for i in range(len(approximator.weights))]
 
 print("d")
 
