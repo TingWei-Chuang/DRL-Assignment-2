@@ -322,15 +322,12 @@ def compute_afterstate(env, a):
         test_env.move_left()
     elif a == 3:
         test_env.move_right()
-    board = test_env.board.copy()
     r = test_env.score - s_prev
-    del test_env
-    return board, r
+    return test_env.board, r
 
 def evaluate(env, approximator, a):
     s_, r = compute_afterstate(env, a)
     val = r + approximator.value(s_)
-    del s_
     return val
 
 class TD_MCTS_Node:
@@ -414,25 +411,19 @@ env = Game2048Env()
 
 steps = 0
 import gc
+gc.enable()
 
 approximator = None
 
 def get_action(state, score):
     global steps
     global approximator
+
     if approximator is None:
         with open("last_3.pkl", "rb") as f:
             approximator = pickle.load(f)
-    if steps % 100 == 0:
-        steps = 0
-        del approximator
-        print("reload")
-        with open("last_3.pkl", "rb") as f:
-            approximator = pickle.load(f)
-    steps += 1
-    del env.board
+
     env.board = state.copy()
-    del state
     env.score = score
     '''root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
