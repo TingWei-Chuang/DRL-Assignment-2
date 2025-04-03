@@ -425,7 +425,7 @@ def get_action(state, score):
             action_values.append(evaluate(env, approximator, a))
         action = legal_moves[np.argmax(action_values)]
 
-    #print(score, flush=True)
+    print(score, action, len(legal_moves), flush=True)
     return action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.

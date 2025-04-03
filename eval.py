@@ -9,7 +9,7 @@ from xml.etree import ElementTree as ET
 import importlib.util
 import requests
 import argparse
-import torch
+#import torch
 import random
 import sys
 import importlib

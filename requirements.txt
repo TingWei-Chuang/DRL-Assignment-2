@@ -1,5 +1,5 @@
 tqdm
 requests
 argparse
-torch
+#torch
 matplotlib
