@@ -411,6 +411,13 @@ class TD_MCTS:
 with open("last_3.pkl", "rb") as f:
     approximator = pickle.load(f)
 
+print("d")
+
+for w in approximator.weights:
+    pass
+
+print("d")
+
 env = Game2048Env()
 #td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
 
