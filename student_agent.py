@@ -507,9 +507,13 @@ gc.enable()
 gc.collect()
 
 approximator = None
+env = None
+td_mcts = None
 
 def get_action(state, score):
     global approximator
+    global env
+    global td_mcts
 
     if approximator is None:
         with open("last_cp.pkl", "rb") as f:
