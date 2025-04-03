@@ -329,6 +329,8 @@ def evaluate(env, approximator, a):
     val = r + approximator.value(s_)
     return val
 
+
+'''
 class TD_MCTS_Node:
     def __init__(self, parent=None, action=None):
         self.parent = parent
@@ -403,10 +405,102 @@ class TD_MCTS:
                 best_visits = child.visits
                 best_action = action
         return best_action, distribution
+'''
 
+class TD_MCTS_Node:
+    def __init__(self, parent=None, action=None):
+        """
+        state: current board state (numpy array)
+        score: cumulative score at this node
+        parent: parent node (None for root)
+        action: action taken from parent to reach this node
+        """
+        self.parent = parent
+        self.action = action
+        self.children = {}
+        self.visits = 0
+        self.total_reward = 0.0
+        # List of untried actions based on the current state's legal moves
+        self.untried_actions = [a for a in range(4)]
 
-env = Game2048Env()
+    def fully_expanded(self):
+        # A node is fully expanded if no legal actions remain untried.
+        return len(self.untried_actions) == 0
+
+class TD_MCTS:
+    def __init__(self, env, approximator, iterations=500, exploration_constant=1.41, rollout_depth=10, gamma=0.99):
+        self.env = env
+        self.approximator = approximator
+        self.iterations = iterations
+        self.c = exploration_constant
+        self.rollout_depth = rollout_depth
+        self.gamma = gamma
+
+    def select_child(self, node):
+        children = []
+        temp = []
+        for child in node.children.values():
+            temp.append(child.total_reward + self.c * np.sqrt(np.log(node.visits) / child.visits))
+            children.append(child)
+        return children[np.argmax(temp)]
+
+    def rollout(self, action_sequence, depth):
+        sim_env = copy.deepcopy(self.env)
+        for action in action_sequence:
+            if not sim_env.is_move_legal(action):
+                return sim_env.score
+            sim_env.step(action)
+        for d in range(depth):
+            legal_moves = [a for a in range(4) if sim_env.is_move_legal(a)]
+            if not legal_moves:
+                return sim_env.score
+            sim_env.step(np.random.choice(legal_moves))
+        legal_moves = [a for a in range(4) if sim_env.is_move_legal(a)]
+        if not legal_moves:
+            return sim_env.score
+        action_values = []
+        for a in legal_moves:
+            action_values.append(evaluate(sim_env, self.approximator, a))
+        return sim_env.score + max(action_values)
+
+    def backpropagate(self, node, reward):
+        while node is not None:
+            node.visits += 1
+            node.total_reward += (1 / node.visits) * (reward - node.total_reward)
+            node = node.parent
+
+    def run_simulation(self, root):
+        node = root
+        action_sequence = []
+        while node.fully_expanded():
+            node = self.select_child(node)
+            action_sequence.append(node.action)
+        action = np.random.choice(node.untried_actions)
+        node.untried_actions.remove(action)
+        new_node = TD_MCTS_Node(node, action)
+        node.children[action] = new_node
+        node = new_node
+        action_sequence.append(action)
+
+        rollout_reward = self.rollout(action_sequence, self.rollout_depth)
+        self.backpropagate(node, rollout_reward)
+
+    def best_action_distribution(self, root):
+        # Compute the normalized visit count distribution for each child of the root.
+        total_visits = sum(child.visits for child in root.children.values())
+        distribution = np.zeros(4)
+        best_visits = -1
+        best_action = None
+        for action, child in root.children.items():
+            distribution[action] = child.visits / total_visits if total_visits > 0 else 0
+            if child.visits > best_visits:
+                best_visits = child.visits
+                best_action = action
+        return best_action, distribution
+
 #td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
+
+
 
 import gc
 gc.enable()
@@ -420,25 +514,29 @@ def get_action(state, score):
     if approximator is None:
         with open("last_cp.pkl", "rb") as f:
             approximator = pickle.load(f)
+        env = Game2048Env()
+        td_mcts = TD_MCTS(env, approximator, iterations=100, exploration_constant=10, rollout_depth=0)
 
     env.board = state
     env.score = score
-    '''root = TD_MCTS_Node(None, None)
+    
+    root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
+        random.seed(0)
         td_mcts.run_simulation(root)
-    best_act, dist = td_mcts.best_action_distribution(root)'''
+    best_act, dist = td_mcts.best_action_distribution(root)
 
-    action_values = []
+    '''action_values = []
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
     action = 0
     if legal_moves:
         for a in legal_moves:
             action_values.append(evaluate(env, approximator, a))
-        action = legal_moves[np.argmax(action_values)]
+        action = legal_moves[np.argmax(action_values)]'''
 
-    print(score, action, len(legal_moves), flush=True)
-
-    return action
+    #print(score, action, len(legal_moves), flush=True)
+    random.seed(0)
+    return best_act
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
 
