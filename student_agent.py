@@ -425,6 +425,7 @@ env = Game2048Env()
 def get_action(state, score):
     del env.board
     env.board = state.copy()
+    del state
     env.score = score
     '''root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
