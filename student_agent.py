@@ -407,17 +407,26 @@ with open("last_3.pkl", "rb") as f:
     approximator = pickle.load(f)
 
 env = Game2048Env()
-td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
+#td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
 
 def get_action(state, score):
     env.board = state.copy()
     env.score = score
-    root = TD_MCTS_Node(None, None)
+    '''root = TD_MCTS_Node(None, None)
     for _ in range(td_mcts.iterations):
         td_mcts.run_simulation(root)
-    best_act, dist = td_mcts.best_action_distribution(root)
-    print(score, dist, flush=True)
-    return best_act
+    best_act, dist = td_mcts.best_action_distribution(root)'''
+
+    action_values = []
+    legal_moves = [a for a in range(4) if env.is_move_legal(a)]
+    action = 0
+    if legal_moves:
+        for a in legal_moves:
+            action_values.append(evaluate(env, approximator, a))
+        action = legal_moves[np.argmax(action_values)]
+
+    print(score, flush=True)
+    return action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
 
