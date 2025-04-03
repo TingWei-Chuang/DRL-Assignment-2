@@ -322,11 +322,16 @@ def compute_afterstate(env, a):
         test_env.move_left()
     elif a == 3:
         test_env.move_right()
-    return test_env.board, test_env.score - s_prev
+    board = test_env.board.copy()
+    r = test_env.score - s_prev
+    del test_env
+    return board, r
 
 def evaluate(env, approximator, a):
     s_, r = compute_afterstate(env, a)
-    return r + approximator.value(s_)
+    val = r + approximator.value(s_)
+    del s_
+    return val
 
 class TD_MCTS_Node:
     def __init__(self, parent=None, action=None):
@@ -410,6 +415,7 @@ env = Game2048Env()
 #td_mcts = TD_MCTS(env, approximator, iterations=2000, exploration_constant=500)
 
 def get_action(state, score):
+    del env.board
     env.board = state.copy()
     env.score = score
     '''root = TD_MCTS_Node(None, None)
