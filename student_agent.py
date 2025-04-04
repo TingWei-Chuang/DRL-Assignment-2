@@ -527,7 +527,7 @@ def get_action(state, score):
         with open("last_cp.pkl", "rb") as f:
             approximator = pickle.load(f)
         env = Game2048Env()
-        td_mcts = TD_MCTS(env, approximator, iterations=20, exploration_constant=0, rollout_depth=0)
+        td_mcts = TD_MCTS(env, approximator, iterations=15, exploration_constant=0, rollout_depth=0)
 
     env.board = state
     env.score = score
@@ -536,12 +536,12 @@ def get_action(state, score):
     for _ in range(td_mcts.iterations):
         random.seed(0)
         td_mcts.run_simulation(root)
-        gc.collect()
+        #gc.collect()
     best_act, dist = td_mcts.best_action_distribution(root)
 
     root = None
 
-    gc.collect()
+    #gc.collect()
 
     '''action_values = []
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
